@@ -1,0 +1,12 @@
+[gd_scene format=3 uid="uid://7kx14fn2p2tl"]
+
+[ext_resource type="Script" uid="uid://bp2ake30lcosb" path="res://scripts/main.gd" id="1_main"]
+[ext_resource type="Texture2D" uid="uid://c32jq4es066cd" path="res://assets/ui/05_top_status_panel_full_alpha.png" id="2_0wfyh"]
+
+[node name="Main" type="Node2D" unique_id=281544315]
+script = ExtResource("1_main")
+
+[node name="05TopStatusPanelFullAlpha" type="Sprite2D" parent="." unique_id=1585317434]
+position = Vector2(223.00002, 43.00006)
+scale = Vector2(0.46774194, 0.46774194)
+texture = ExtResource("2_0wfyh")

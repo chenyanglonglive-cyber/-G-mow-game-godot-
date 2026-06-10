@@ -1,0 +1,15 @@
+.godot/
+.import/
+export_presets.cfg
+export.cfg
+*.translation
+*.import.tmp
+*.tmp
+*.log
+*.pck
+*.zip
+*.exe
+*.dmg
+*.app/
+*.apk
+*.aab
