@@ -12,7 +12,7 @@ var burn_duration := 0.0
 
 func setup(new_target: Node2D, options: Dictionary) -> void:
 	target = new_target
-	speed = float(options.get("speed", speed))
+	speed = float(options.get("speed", speed)) * 1.6
 	damage = float(options.get("damage", damage))
 	bullet_color = options.get("color", bullet_color)
 	tower_type = str(options.get("tower_type", tower_type))
@@ -46,5 +46,5 @@ func _hit_target() -> void:
 	queue_free()
 
 func _draw() -> void:
-	draw_circle(Vector2.ZERO, 5.0, bullet_color)
-	draw_circle(Vector2.ZERO, 9.0, Color(bullet_color.r, bullet_color.g, bullet_color.b, 0.25))
+	draw_circle(Vector2.ZERO, 8.0, bullet_color)
+	draw_circle(Vector2.ZERO, 14.4, Color(bullet_color.r, bullet_color.g, bullet_color.b, 0.25))

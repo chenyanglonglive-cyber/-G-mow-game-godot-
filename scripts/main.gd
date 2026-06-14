@@ -4,9 +4,9 @@ const TDConfig := preload("res://scripts/config.gd")
 const EnemyScript := preload("res://scripts/enemy.gd")
 const TowerScript := preload("res://scripts/tower.gd")
 
-const GRID_SIZE := 40.0
-const MAP_ORIGIN := Vector2(5, 110)
-const CANVAS_SIZE := Vector2(450, 800)
+const GRID_SIZE := 64.0
+const MAP_ORIGIN := Vector2(8, 176)
+const CANVAS_SIZE := Vector2(720, 1280)
 
 var gold := TDConfig.LEVEL.start_gold
 var lives := TDConfig.LEVEL.start_lives
@@ -23,125 +23,67 @@ var enemies: Array = []
 var towers: Array = []
 var tower_by_slot := {}
 var build_slots: Array[Vector2] = []
-var path1: Array[Vector2] = []
-var path2: Array[Vector2] = []
 
-var world_layer: Node2D
-var bullet_layer: Node2D
-var ui_layer: CanvasLayer
-var gold_label: Label
-var lives_label: Label
-var wave_label: Label
-var info_label: Label
-var upgrade_button: Button
+@onready var path1_node: Path2D = $Map/Path1
+@onready var path2_node: Path2D = $Map/Path2
+
+
+const TowerScene := preload("res://scenes/tower.tscn")
+
+@onready var world_layer: Node2D = $WorldLayer
+@onready var bullet_layer: Node2D = $BulletLayer
+@onready var towers_container: Node2D = $WorldLayer/TowersContainer
+@onready var enemies_container: Node2D = $WorldLayer/EnemiesContainer
+
+
+@onready var gold_label: Label = $HUD/TopLabels/GoldLabel
+@onready var lives_label: Label = $HUD/TopLabels/ShieldLabel
+@onready var wave_label: Label = $HUD/TopLabels/WaveLabel
+@onready var info_label: Label = $HUD/BottomContainer/ActionRow/InfoLabel
+@onready var upgrade_button: Button = $HUD/BottomContainer/ActionRow/UpgradeButton
+
+@onready var build_piercing: Button = $HUD/BottomContainer/BuildButtons/BuildPiercing
+@onready var build_blade: Button = $HUD/BottomContainer/BuildButtons/BuildBlade
+@onready var build_frost: Button = $HUD/BottomContainer/BuildButtons/BuildFrost
+@onready var build_flame: Button = $HUD/BottomContainer/BuildButtons/BuildFlame
 
 func _ready() -> void:
-	_init_world()
-	_init_ui()
+	_init_ui_connections()
 	_prepare_level_data()
 	_start_wave_countdown()
 
-func _init_world() -> void:
-	_add_background()
-	world_layer = Node2D.new()
-	add_child(world_layer)
-	bullet_layer = Node2D.new()
-	add_child(bullet_layer)
-
-func _add_background() -> void:
-	var bg_path := "res://assets/ui/background.jpg"
-	if ResourceLoader.exists(bg_path):
-		var sprite := Sprite2D.new()
-		sprite.texture = load(bg_path)
-		sprite.centered = true
-		sprite.position = CANVAS_SIZE / 2.0
-		sprite.scale = Vector2(CANVAS_SIZE.x / sprite.texture.get_width(), CANVAS_SIZE.y / sprite.texture.get_height())
-		add_child(sprite)
-	else:
-		var rect := ColorRect.new()
-		rect.size = CANVAS_SIZE
-		rect.color = Color("#061126")
-		add_child(rect)
-
-func _init_ui() -> void:
-	ui_layer = CanvasLayer.new()
-	add_child(ui_layer)
-	var root := Control.new()
-	root.size = CANVAS_SIZE
-	ui_layer.add_child(root)
-
-	var top := PanelContainer.new()
-	top.position = Vector2(12, 12)
-	top.size = Vector2(426, 62)
-	root.add_child(top)
-	var top_row := HBoxContainer.new()
-	top_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	top_row.add_theme_constant_override("separation", 30)
-	top.add_child(top_row)
-	gold_label = _make_label("")
-	lives_label = _make_label("")
-	wave_label = _make_label("")
-	top_row.add_child(gold_label)
-	top_row.add_child(lives_label)
-	top_row.add_child(wave_label)
-
-	var bottom := PanelContainer.new()
-	bottom.position = Vector2(12, 648)
-	bottom.size = Vector2(426, 128)
-	root.add_child(bottom)
-	var bottom_col := VBoxContainer.new()
-	bottom_col.add_theme_constant_override("separation", 8)
-	bottom.add_child(bottom_col)
-
-	var button_row := HBoxContainer.new()
-	button_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	button_row.add_theme_constant_override("separation", 8)
-	bottom_col.add_child(button_row)
-	for tower_type in ["piercing", "blade", "frost", "flame"]:
-		var data: Dictionary = TDConfig.TOWERS[tower_type]
-		var button := Button.new()
-		button.custom_minimum_size = Vector2(96, 50)
-		button.text = "%s\n%dG" % [data.name, int(data.costs[0])]
-		button.pressed.connect(_select_build_type.bind(tower_type))
-		button_row.add_child(button)
-
-	var action_row := HBoxContainer.new()
-	action_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	action_row.add_theme_constant_override("separation", 8)
-	bottom_col.add_child(action_row)
-	upgrade_button = Button.new()
-	upgrade_button.custom_minimum_size = Vector2(120, 34)
-	upgrade_button.text = "Upgrade"
+func _init_ui_connections() -> void:
+	# Bind build tower buttons
+	build_piercing.pressed.connect(_select_build_type.bind("piercing"))
+	build_blade.pressed.connect(_select_build_type.bind("blade"))
+	build_frost.pressed.connect(_select_build_type.bind("frost"))
+	build_flame.pressed.connect(_select_build_type.bind("flame"))
+	
+	# Bind upgrade button
 	upgrade_button.pressed.connect(_upgrade_selected_tower)
-	action_row.add_child(upgrade_button)
-	info_label = _make_label("")
-	info_label.custom_minimum_size = Vector2(260, 34)
-	action_row.add_child(info_label)
+	
+	# Initialize build buttons text (Name and Cost)
+	var buttons = {
+		"piercing": build_piercing,
+		"blade": build_blade,
+		"frost": build_frost,
+		"flame": build_flame
+	}
+	for type in buttons:
+		var btn: Button = buttons[type]
+		var data: Dictionary = TDConfig.TOWERS[type]
+		btn.text = "%s\n%dG" % [data.name, int(data.costs[0])]
+	
 	_update_ui()
 
-func _make_label(text: String) -> Label:
-	var label := Label.new()
-	label.text = text
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	label.add_theme_font_size_override("font_size", 18)
-	return label
 
 func _prepare_level_data() -> void:
 	for slot: Vector2i in TDConfig.LEVEL.build_slots:
 		build_slots.append(_grid_to_world(Vector2(slot.x, slot.y)))
-	path1 = _path_to_world(TDConfig.LEVEL.path1)
-	path2 = _path_to_world(TDConfig.LEVEL.path2)
 	queue_redraw()
 
 func _grid_to_world(grid: Vector2) -> Vector2:
 	return MAP_ORIGIN + Vector2(grid.x * GRID_SIZE + GRID_SIZE / 2.0, grid.y * GRID_SIZE + GRID_SIZE / 2.0)
-
-func _path_to_world(path: Array) -> Array[Vector2]:
-	var result: Array[Vector2] = []
-	for point: Vector2 in path:
-		result.append(_grid_to_world(point))
-	return result
 
 func _process(delta: float) -> void:
 	_clean_arrays()
@@ -197,12 +139,12 @@ func _mixed_enemy_type(index: int) -> String:
 
 func _spawn_enemy(enemy_type: String) -> void:
 	var enemy := EnemyScript.new()
-	var chosen_path := path2 if path_toggle else path1
+	var chosen_path_node := path2_node if path_toggle else path1_node
 	path_toggle = not path_toggle
-	enemy.setup(enemy_type, chosen_path, TDConfig.ENEMIES[enemy_type])
+	enemy.setup(enemy_type, TDConfig.ENEMIES[enemy_type])
 	enemy.died.connect(_on_enemy_died)
 	enemy.reached_goal.connect(_on_enemy_reached_goal)
-	world_layer.add_child(enemy)
+	chosen_path_node.add_child(enemy)
 	enemies.append(enemy)
 
 func _on_enemy_died(reward: int) -> void:
@@ -214,7 +156,7 @@ func _on_enemy_reached_goal() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		var pos: Vector2 = event.position
-		if pos.y > 640.0:
+		if pos.y > 1024.0:
 			return
 		_handle_world_click(pos)
 
@@ -231,13 +173,13 @@ func _handle_world_click(pos: Vector2) -> void:
 
 func _tower_at_position(pos: Vector2) -> Node2D:
 	for tower in towers:
-		if is_instance_valid(tower) and tower.global_position.distance_to(pos) < 28.0:
+		if is_instance_valid(tower) and tower.global_position.distance_to(pos) < 44.8:
 			return tower
 	return null
 
 func _slot_index_at_position(pos: Vector2) -> int:
 	for i in build_slots.size():
-		if build_slots[i].distance_to(pos) <= 28.0:
+		if build_slots[i].distance_to(pos) <= 44.8:
 			return i
 	return -1
 
@@ -251,10 +193,10 @@ func _try_build(slot_index: int) -> void:
 		info_label.text = "Not enough gold"
 		return
 	gold -= cost
-	var tower := TowerScript.new()
+	var tower := TowerScene.instantiate()
 	tower.position = build_slots[slot_index]
 	tower.setup(selected_type, data)
-	world_layer.add_child(tower)
+	towers_container.add_child(tower)
 	towers.append(tower)
 	tower_by_slot[slot_index] = tower
 	_select_tower(tower)
@@ -288,9 +230,9 @@ func _upgrade_selected_tower() -> void:
 	_update_ui()
 
 func _update_ui() -> void:
-	gold_label.text = "Gold: %d G" % gold
-	lives_label.text = "Shield: %d" % lives
-	wave_label.text = "Wave: %d/%d" % [max(current_wave + 1, 1), TDConfig.WAVES.size()]
+	gold_label.text = "%d G" % gold
+	lives_label.text = "%d" % lives
+	wave_label.text = "%d/%d" % [max(current_wave + 1, 1), TDConfig.WAVES.size()]
 	if is_instance_valid(selected_tower):
 		var cost: int = selected_tower.get_upgrade_cost()
 		upgrade_button.disabled = cost < 0
@@ -305,21 +247,24 @@ func _draw() -> void:
 	_draw_build_slots()
 
 func _draw_grid() -> void:
-	var grid_color := Color(0.15, 0.65, 1.0, 0.18)
+	# Increase visibility: thickness 2.0, alpha 0.40
+	var grid_color := Color(0.15, 0.65, 1.0, 0.40)
 	for x in range(0, int(TDConfig.LEVEL.cols) + 1):
 		var gx := MAP_ORIGIN.x + x * GRID_SIZE
-		draw_line(Vector2(gx, MAP_ORIGIN.y), Vector2(gx, MAP_ORIGIN.y + TDConfig.LEVEL.rows * GRID_SIZE), grid_color, 1.0)
+		draw_line(Vector2(gx, MAP_ORIGIN.y), Vector2(gx, MAP_ORIGIN.y + TDConfig.LEVEL.rows * GRID_SIZE), grid_color, 2.0)
 	for y in range(0, int(TDConfig.LEVEL.rows) + 1):
 		var gy := MAP_ORIGIN.y + y * GRID_SIZE
-		draw_line(Vector2(MAP_ORIGIN.x, gy), Vector2(MAP_ORIGIN.x + TDConfig.LEVEL.cols * GRID_SIZE, gy), grid_color, 1.0)
+		draw_line(Vector2(MAP_ORIGIN.x, gy), Vector2(MAP_ORIGIN.x + TDConfig.LEVEL.cols * GRID_SIZE, gy), grid_color, 2.0)
 
 func _draw_paths() -> void:
-	for path in [path1, path2]:
-		if path.size() < 2:
+	var p1_points := path1_node.curve.get_baked_points()
+	var p2_points := path2_node.curve.get_baked_points()
+	for points in [p1_points, p2_points]:
+		if points.size() < 2:
 			continue
-		for i in range(path.size() - 1):
-			draw_line(path[i], path[i + 1], Color(0.0, 0.75, 1.0, 0.35), 34.0)
-			draw_line(path[i], path[i + 1], Color("#00e5ff"), 7.0)
+		for i in range(points.size() - 1):
+			draw_line(points[i], points[i + 1], Color(0.0, 0.75, 1.0, 0.35), 54.4)
+			draw_line(points[i], points[i + 1], Color("#00e5ff"), 11.2)
 
 func _draw_build_slots() -> void:
 	for slot in build_slots:

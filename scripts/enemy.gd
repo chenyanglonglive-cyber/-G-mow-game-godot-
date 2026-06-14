@@ -1,9 +1,8 @@
-extends Node2D
+extends PathFollow2D
 
 signal died(reward: int)
 signal reached_goal
 
-var path: Array[Vector2] = []
 var type_data := {}
 var max_hp := 1.0
 var hp := 1.0
@@ -11,7 +10,6 @@ var speed := 80.0
 var reward := 0
 var radius := 18.0
 var color := Color.WHITE
-var segment_index := 0
 var slow_factor := 0.0
 var slow_time := 0.0
 var burn_damage := 0.0
@@ -19,17 +17,19 @@ var burn_time := 0.0
 var burn_tick := 0.0
 var sprite: Sprite2D
 var progress_score := 0.0
+var anim_timer := 0.0
+const ANIM_SPEED := 0.08
 
-func setup(enemy_type: String, world_path: Array[Vector2], data: Dictionary) -> void:
-	path = world_path
+func setup(enemy_type: String, data: Dictionary) -> void:
 	type_data = data
 	max_hp = float(data.hp)
 	hp = max_hp
-	speed = float(data.speed)
+	speed = float(data.speed) * 1.6
 	reward = int(data.reward)
-	radius = float(data.radius)
+	radius = float(data.radius) * 1.6
 	color = data.color
-	position = path[0]
+	rotates = false
+	loop = false
 	_load_sprite(str(data.texture))
 	queue_redraw()
 
@@ -41,13 +41,33 @@ func _load_sprite(path_name: String) -> void:
 		return
 	sprite = Sprite2D.new()
 	sprite.texture = tex
-	sprite.scale = Vector2.ONE * min((radius * 2.0) / max(tex.get_width(), 1), (radius * 2.0) / max(tex.get_height(), 1))
+	
+	if "_sheet" in path_name:
+		sprite.hframes = 5
+		sprite.vframes = int(tex.get_height() / 170)
+		sprite.frame = 0
+		var frame_w := float(tex.get_width()) / sprite.hframes
+		var frame_h := float(tex.get_height()) / sprite.vframes
+		sprite.scale = Vector2.ONE * min((radius * 2.0) / frame_w, (radius * 2.0) / frame_h)
+	else:
+		sprite.scale = Vector2.ONE * min((radius * 2.0) / max(tex.get_width(), 1), (radius * 2.0) / max(tex.get_height(), 1))
+		
 	add_child(sprite)
 
 func _process(delta: float) -> void:
 	_update_status_effects(delta)
 	_move_along_path(delta)
+	_update_animation(delta)
 	queue_redraw()
+
+func _update_animation(delta: float) -> void:
+	if sprite != null and sprite.hframes > 1:
+		anim_timer += delta
+		if anim_timer >= ANIM_SPEED:
+			anim_timer = 0.0
+			var total_frames := sprite.hframes * sprite.vframes
+			sprite.frame = (sprite.frame + 1) % total_frames
+
 
 func _update_status_effects(delta: float) -> void:
 	if slow_time > 0.0:
@@ -62,27 +82,10 @@ func _update_status_effects(delta: float) -> void:
 			take_damage(burn_damage)
 
 func _move_along_path(delta: float) -> void:
-	if path.size() < 2:
-		return
 	var actual_speed := speed * (1.0 - slow_factor)
-	var remaining := actual_speed * delta
-	while remaining > 0.0 and segment_index < path.size() - 1:
-		var target := path[segment_index + 1]
-		var to_target := target - position
-		var dist := to_target.length()
-		if dist <= 0.001:
-			segment_index += 1
-			continue
-		if remaining >= dist:
-			position = target
-			progress_score += dist
-			remaining -= dist
-			segment_index += 1
-		else:
-			position += to_target.normalized() * remaining
-			progress_score += remaining
-			remaining = 0.0
-	if segment_index >= path.size() - 1:
+	progress += actual_speed * delta
+	progress_score = progress
+	if progress_ratio >= 1.0:
 		reached_goal.emit()
 		queue_free()
 

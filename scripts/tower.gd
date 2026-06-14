@@ -7,12 +7,18 @@ var cfg := {}
 var level := 0
 var fire_timer := 0.0
 var selected := false
-var sprite: Sprite2D
+
+@onready var sprite: Sprite2D = $Sprite
+
+func _ready() -> void:
+	if cfg.size() > 0:
+		_load_sprite()
 
 func setup(new_type: String, new_cfg: Dictionary) -> void:
 	tower_type = new_type
 	cfg = new_cfg
-	_load_sprite()
+	if is_node_ready():
+		_load_sprite()
 	queue_redraw()
 
 func _load_sprite() -> void:
@@ -26,14 +32,12 @@ func _load_sprite() -> void:
 	var tex := load(texture_path)
 	if tex == null:
 		return
-	if sprite == null:
-		sprite = Sprite2D.new()
-		add_child(sprite)
 	sprite.texture = tex
-	sprite.scale = Vector2.ONE * min(48.0 / max(tex.get_width(), 1), 48.0 / max(tex.get_height(), 1))
+	sprite.scale = Vector2.ONE * min(76.8 / max(tex.get_width(), 1), 76.8 / max(tex.get_height(), 1))
+
 
 func get_range() -> float:
-	return float(cfg.ranges[level])
+	return float(cfg.ranges[level]) * 1.6
 
 func get_upgrade_cost() -> int:
 	if level >= 2:

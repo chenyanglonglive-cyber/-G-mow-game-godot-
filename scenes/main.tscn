@@ -1,12 +1,156 @@
 [gd_scene format=3 uid="uid://7kx14fn2p2tl"]
 
 [ext_resource type="Script" uid="uid://bp2ake30lcosb" path="res://scripts/main.gd" id="1_main"]
-[ext_resource type="Texture2D" uid="uid://c32jq4es066cd" path="res://assets/ui/05_top_status_panel_full_alpha.png" id="2_0wfyh"]
+[ext_resource type="Texture2D" uid="uid://cppp1uh2q71d4" path="res://assets/ui/background.jpg" id="2_jyhfs"]
+[ext_resource type="Texture2D" uid="uid://c32jq4es066cd" path="res://assets/ui/05_top_status_panel_full_alpha.png" id="3_0wfyh"]
+[ext_resource type="Texture2D" uid="uid://bjvc31b8ugg1d" path="res://assets/ui/path_texture.png" id="4_tbgi4"]
+[ext_resource type="Texture2D" uid="uid://d2l3quopm3tlx" path="res://assets/ui/06_bottom_panel_base_full_alpha.png" id="5_tefeu"]
 
-[node name="Main" type="Node2D" unique_id=281544315]
+[sub_resource type="Curve2D" id="Curve2D_path1"]
+_data = {
+"points": PackedVector2Array(0, 0, 0, 0, 358, 107, 0, 0, 0, 0, 356, 307, 0, 0, 0, 0, 180, 309, 0, 0, 0, 0, 175, 837, 0, 0, 0, 0, 284, 959, 0, 0, 0, 0, 282, 1069)
+}
+point_count = 6
+
+[sub_resource type="Curve2D" id="Curve2D_path2"]
+_data = {
+"points": PackedVector2Array(0, 0, 0, 0, 359, 115, 0, 0, 0, 0, 359, 306, 0, 0, 0, 0, 538, 310, 0, 0, 0, 0, 539, 837, 0, 0, 0, 0, 428, 956, 0, 0, 0, 0, 433, 1071)
+}
+point_count = 6
+
+[node name="Main" type="Node2D" unique_id=1391631498]
 script = ExtResource("1_main")
 
-[node name="05TopStatusPanelFullAlpha" type="Sprite2D" parent="." unique_id=1585317434]
-position = Vector2(223.00002, 43.00006)
-scale = Vector2(0.46774194, 0.46774194)
-texture = ExtResource("2_0wfyh")
+[node name="Map" type="Node2D" parent="." unique_id=755305117]
+
+[node name="Background" type="Sprite2D" parent="Map" unique_id=1291074675]
+position = Vector2(360, 640)
+scale = Vector2(0.7578947, 0.7578947)
+texture = ExtResource("2_jyhfs")
+metadata/_edit_lock_ = true
+
+[node name="PathTexture" type="Sprite2D" parent="Map" unique_id=916469912]
+position = Vector2(360, 600)
+scale = Vector2(0.7383701, 0.8147083)
+texture = ExtResource("4_tbgi4")
+
+[node name="Path1" type="Path2D" parent="Map" unique_id=10223637]
+curve = SubResource("Curve2D_path1")
+
+[node name="Path2" type="Path2D" parent="Map" unique_id=527625054]
+curve = SubResource("Curve2D_path2")
+
+[node name="WorldLayer" type="Node2D" parent="." unique_id=191156843]
+
+[node name="TowersContainer" type="Node2D" parent="WorldLayer" unique_id=1219135394]
+
+[node name="EnemiesContainer" type="Node2D" parent="WorldLayer" unique_id=1767640664]
+
+[node name="BulletLayer" type="Node2D" parent="." unique_id=286370098]
+
+[node name="HUD" type="CanvasLayer" parent="." unique_id=1879273021]
+
+[node name="TopPanelSprite" type="Sprite2D" parent="HUD" unique_id=2053792416]
+position = Vector2(358.4688, 72)
+scale = Vector2(0.756989, 0.756989)
+texture = ExtResource("3_0wfyh")
+
+[node name="TopLabels" type="Control" parent="HUD" unique_id=758117099]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 19.2
+offset_top = 19.2
+offset_right = 700.8
+offset_bottom = 118.4
+
+[node name="GoldLabel" type="Label" parent="HUD/TopLabels" unique_id=838200284]
+layout_mode = 0
+offset_left = 92.8
+offset_top = 22.4
+offset_right = 268.8
+offset_bottom = 70.4
+theme_override_font_sizes/font_size = 28
+text = "0 G"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ShieldLabel" type="Label" parent="HUD/TopLabels" unique_id=11711396]
+layout_mode = 0
+offset_left = 304.0
+offset_top = 22.4
+offset_right = 416.0
+offset_bottom = 70.4
+theme_override_font_sizes/font_size = 28
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="WaveLabel" type="Label" parent="HUD/TopLabels" unique_id=1948465564]
+layout_mode = 0
+offset_left = 556.8
+offset_top = 22.4
+offset_right = 668.8
+offset_bottom = 70.4
+theme_override_font_sizes/font_size = 28
+text = "1/1"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BottomPanelSprite" type="Sprite2D" parent="HUD" unique_id=1513533158]
+position = Vector2(361.6, 1123.2)
+scale = Vector2(0.7643565, 0.7643565)
+texture = ExtResource("5_tefeu")
+
+[node name="BottomContainer" type="VBoxContainer" parent="HUD" unique_id=750203971]
+offset_left = 19.2
+offset_top = 1036.8
+offset_right = 700.8
+offset_bottom = 1241.6
+theme_override_constants/separation = 12
+
+[node name="BuildButtons" type="HBoxContainer" parent="HUD/BottomContainer" unique_id=1515272072]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="BuildPiercing" type="Button" parent="HUD/BottomContainer/BuildButtons" unique_id=2026164011]
+custom_minimum_size = Vector2(154, 80)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Piercing"
+
+[node name="BuildBlade" type="Button" parent="HUD/BottomContainer/BuildButtons" unique_id=633542331]
+custom_minimum_size = Vector2(154, 80)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Blade"
+
+[node name="BuildFrost" type="Button" parent="HUD/BottomContainer/BuildButtons" unique_id=1739795310]
+custom_minimum_size = Vector2(154, 80)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Frost"
+
+[node name="BuildFlame" type="Button" parent="HUD/BottomContainer/BuildButtons" unique_id=1103690181]
+custom_minimum_size = Vector2(154, 80)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Flame"
+
+[node name="ActionRow" type="HBoxContainer" parent="HUD/BottomContainer" unique_id=536320373]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="UpgradeButton" type="Button" parent="HUD/BottomContainer/ActionRow" unique_id=850373797]
+custom_minimum_size = Vector2(192, 54)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Upgrade"
+
+[node name="InfoLabel" type="Label" parent="HUD/BottomContainer/ActionRow" unique_id=2049308911]
+custom_minimum_size = Vector2(416, 54)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+horizontal_alignment = 1
+vertical_alignment = 1
