@@ -13,3 +13,6 @@ export.cfg
 *.app/
 *.apk
 *.aab
+
+# OneDrive assets directory
+assets/
