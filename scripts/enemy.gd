@@ -2,6 +2,7 @@ extends PathFollow2D
 
 signal died(reward: int)
 signal reached_goal
+signal exploded_ice_nova(pos: Vector2)
 
 var type_data := {}
 var max_hp := 1.0
@@ -20,11 +21,24 @@ var progress_score := 0.0
 var anim_timer := 0.0
 const ANIM_SPEED := 0.08
 
+# New mechanics
+var pull_offset := Vector2.ZERO
+var was_pulled_this_frame := false
+var freeze_time := 0.0
+var base_max_hp := 1.0
+var base_speed := 80.0
+
 func setup(enemy_type: String, data: Dictionary) -> void:
 	type_data = data
-	max_hp = float(data.hp)
+	base_max_hp = float(data.hp)
+	var tree = get_tree()
+	var main_node = tree.current_scene if tree != null else null
+	var hp_mult: float = main_node.enemy_hp_multiplier if main_node and "enemy_hp_multiplier" in main_node else 1.0
+	max_hp = base_max_hp * hp_mult
 	hp = max_hp
-	speed = float(data.speed) * 1.6
+	
+	base_speed = float(data.speed) * 1.6
+	speed = base_speed
 	reward = int(data.reward)
 	radius = float(data.radius) * 1.6
 	color = data.color
@@ -58,6 +72,17 @@ func _process(delta: float) -> void:
 	_update_status_effects(delta)
 	_move_along_path(delta)
 	_update_animation(delta)
+	
+	# Apply pull offset to sprite if valid
+	if sprite != null:
+		sprite.position = pull_offset
+		
+	# Decay pull offset if not pulled this frame
+	if not was_pulled_this_frame:
+		pull_offset = pull_offset.move_toward(Vector2.ZERO, 60.0 * delta)
+	else:
+		was_pulled_this_frame = false
+		
 	queue_redraw()
 
 func _update_animation(delta: float) -> void:
@@ -70,10 +95,14 @@ func _update_animation(delta: float) -> void:
 
 
 func _update_status_effects(delta: float) -> void:
+	if freeze_time > 0.0:
+		freeze_time -= delta
+		
 	if slow_time > 0.0:
 		slow_time -= delta
 	else:
 		slow_factor = 0.0
+		
 	if burn_time > 0.0:
 		burn_time -= delta
 		burn_tick -= delta
@@ -82,7 +111,15 @@ func _update_status_effects(delta: float) -> void:
 			take_damage(burn_damage)
 
 func _move_along_path(delta: float) -> void:
-	var actual_speed := speed * (1.0 - slow_factor)
+	if freeze_time > 0.0:
+		# Frozen: do not move along path
+		progress_score = progress
+		return
+		
+	var tree = get_tree()
+	var main_node = tree.current_scene if tree != null else null
+	var speed_mult: float = main_node.enemy_speed_multiplier if main_node and "enemy_speed_multiplier" in main_node else 1.0
+	var actual_speed := base_speed * speed_mult * (1.0 - slow_factor)
 	progress += actual_speed * delta
 	progress_score = progress
 	if progress_ratio >= 1.0:
@@ -92,12 +129,17 @@ func _move_along_path(delta: float) -> void:
 func take_damage(amount: float) -> void:
 	hp -= amount
 	if hp <= 0.0:
+		if slow_time > 0.0 or freeze_time > 0.0:
+			exploded_ice_nova.emit(global_position + pull_offset)
 		died.emit(reward)
 		queue_free()
 
 func apply_slow(amount: float, duration: float) -> void:
 	slow_factor = max(slow_factor, amount)
 	slow_time = max(slow_time, duration)
+
+func apply_freeze(duration: float) -> void:
+	freeze_time = max(freeze_time, duration)
 
 func apply_burn(amount: float, duration: float) -> void:
 	burn_damage = max(burn_damage, amount)
@@ -106,13 +148,15 @@ func apply_burn(amount: float, duration: float) -> void:
 
 func _draw() -> void:
 	if sprite == null:
-		draw_circle(Vector2.ZERO, radius, color)
-		draw_arc(Vector2.ZERO, radius, 0.0, TAU, 24, Color.WHITE, 2.0)
+		draw_circle(pull_offset, radius, color)
+		draw_arc(pull_offset, radius, 0.0, TAU, 24, Color.WHITE, 2.0)
 	var width := radius * 2.0
 	var y := -radius - 10.0
-	draw_rect(Rect2(Vector2(-radius, y), Vector2(width, 4)), Color(0.1, 0.1, 0.1, 0.8))
-	draw_rect(Rect2(Vector2(-radius, y), Vector2(width * clamp(hp / max_hp, 0.0, 1.0), 4)), Color("#33ff66"))
+	draw_rect(Rect2(pull_offset + Vector2(-radius, y), Vector2(width, 4)), Color(0.1, 0.1, 0.1, 0.8))
+	draw_rect(Rect2(pull_offset + Vector2(-radius, y), Vector2(width * clamp(hp / max_hp, 0.0, 1.0), 4)), Color("#33ff66"))
 	if slow_time > 0.0:
-		draw_arc(Vector2.ZERO, radius + 5.0, 0.0, TAU, 32, Color("#80ffff"), 2.0)
+		draw_arc(pull_offset, radius + 5.0, 0.0, TAU, 32, Color("#80ffff"), 2.0)
+	if freeze_time > 0.0:
+		draw_arc(pull_offset, radius + 2.0, 0.0, TAU, 32, Color("#00aaff"), 3.0)
 	if burn_time > 0.0:
-		draw_arc(Vector2.ZERO, radius + 8.0, 0.0, TAU, 32, Color("#ff6633"), 2.0)
+		draw_arc(pull_offset, radius + 8.0, 0.0, TAU, 32, Color("#ff6633"), 2.0)

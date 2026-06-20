@@ -11,7 +11,7 @@ G:\GoDot4\Godot_v4.6.3-stable_win64.exe --path <project-path>
 The `assets` folder is a Windows junction to:
 
 ```text
-G:\OneDrive\mow-game-assets
+D:\OneDrive\mow-game-assets
 ```
 
 Current migrated features:

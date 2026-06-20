@@ -28,10 +28,11 @@ const LEVEL := {
 
 const TOWERS := {
 	"piercing": {
-		"name": "Missile",
+		"name": "雷霆穿甲机",
+		"names": ["雷霆穿甲机 1级", "雷霆穿甲机 2级", "【雷霆·超载轨道炮】", "宙斯·天罚战神"],
 		"color": Color("#00d2ff"),
 		"bullet_color": Color("#00f6ff"),
-		"costs": [200, 300, 450],
+		"costs": [200, 300, 450, 0],
 		"ranges": [120, 150, 180, 240],
 		"fire_rates": [0.80, 0.65, 0.50, 0.20],
 		"damage": [25, 45, 75, 300],
@@ -39,20 +40,22 @@ const TOWERS := {
 		"texture_prefix": "piercing"
 	},
 	"blade": {
-		"name": "Blade",
+		"name": "斩空刀锋机",
+		"names": ["斩空刀锋机 1级", "斩空刀锋机 2级", "【斩空·引力磁爆盘】", "修罗·狂怒战神"],
 		"color": Color("#ff0055"),
 		"bullet_color": Color("#ff5577"),
-		"costs": [250, 350, 500],
+		"costs": [250, 350, 500, 0],
 		"ranges": [65, 80, 95, 130],
 		"fire_rates": [0.20, 0.18, 0.15, 0.08],
 		"damage": [8, 15, 25, 120],
 		"texture_prefix": "blade"
 	},
 	"frost": {
-		"name": "Frost",
+		"name": "霜冻控场机",
+		"names": ["霜冻控场机 1级", "霜冻控场机 2级", "【霜冻·绝对零度角】", "极寒·凋零战神"],
 		"color": Color("#00ffcc"),
 		"bullet_color": Color("#aaffff"),
-		"costs": [180, 250, 400],
+		"costs": [180, 250, 400, 0],
 		"ranges": [110, 135, 160, 200],
 		"fire_rates": [1.20, 1.00, 0.80, 0.40],
 		"damage": [15, 30, 50, 180],
@@ -62,13 +65,14 @@ const TOWERS := {
 		"texture_prefix": "frost"
 	},
 	"flame": {
-		"name": "Flame",
+		"name": "炽核熔炎机",
+		"names": ["炽核熔炎机 1级", "炽核熔炎机 2级", "【炽核·聚变喷射流】", "曜星·熔炉战神"],
 		"color": Color("#ffaa00"),
 		"bullet_color": Color("#ff3300"),
-		"costs": [220, 320, 480],
+		"costs": [220, 320, 480, 0],
 		"ranges": [100, 125, 150, 190],
-		"fire_rates": [1.00, 0.90, 0.80, 0.50],
-		"damage": [20, 40, 70, 250],
+		"fire_rates": [1.00, 0.90, 0.10, 0.50],
+		"damage": [20, 40, 12, 250],
 		"bullet_speed": 500.0,
 		"burn_damage": [5, 10, 20, 80],
 		"burn_duration": 3.0,
